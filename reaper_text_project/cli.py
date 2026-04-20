@@ -12,7 +12,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output_file", type=Path, help="Output .rpp file")
     p.add_argument("--min-db", type=float, default=-3.0)
     p.add_argument("--max-db", type=float, default=3.0)
-    p.add_argument("--spacing", type=float, default=2.0, help="Silence between items in seconds")
+    p.add_argument("--spacing", type=float, default=3.0, help="Silence between items in seconds")
     p.add_argument("--no-fx", action="store_true", help="Disable FX chain")
     p.add_argument("--no-ds", action="store_true")
     p.add_argument("--no-comp", action="store_true")

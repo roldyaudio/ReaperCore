@@ -39,3 +39,29 @@ def test_guessed_item_length_reads_exact_wav_duration(tmp_path: Path) -> None:
         wf.writeframes(b"\x00\x00" * frame_count)
 
     assert guessed_item_length(wav_path) == 1.5
+
+
+def test_items_continue_from_previous_track_end(tmp_path: Path) -> None:
+    root = tmp_path / "ES"
+    first = root / "A"
+    second = root / "B"
+    first.mkdir(parents=True)
+    second.mkdir(parents=True)
+
+    sample_rate = 48_000
+    frame_count = sample_rate  # 1 second
+
+    for wav_path in [first / "a.wav", second / "b.wav"]:
+        with wave.open(str(wav_path), "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sample_rate)
+            wf.writeframes(b"\x00\x00" * frame_count)
+
+    out = tmp_path / "out.rpp"
+    cfg = GeneratorConfig(source_root=root, output_file=out, spacing_seconds=3.0)
+    project = generate_project(cfg)
+
+    assert len(project.tracks) == 2
+    assert project.tracks[0].items[0].position == 0.0
+    assert project.tracks[1].items[0].position == 4.0
