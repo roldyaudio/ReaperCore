@@ -25,6 +25,8 @@ from .generator import GeneratorConfig, generate_project
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        self._collapsed_size = (700, 200)
+        self._expanded_size = (700, 420)
         self.setWindowTitle("ReaperCore")
         self.resize(700, 200)
         self._last_auto_output = "output/project_from_text.rpp"
