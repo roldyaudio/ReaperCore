@@ -62,6 +62,7 @@ def _attach_items(track: Track, folder: Path, iid_start: int, cfg: GeneratorConf
     iid = iid_start
     for f in files:
         length = guessed_item_length(f)
+        print(f"[reaper-rpp] Procesando archivo: {f} | duración: {length:.3f}s")
         track.items.append(Item(file_path=f.resolve(), position=cursor, length=length, iid=iid))
         cursor += length + cfg.spacing_seconds
         iid += 1

@@ -23,12 +23,14 @@ class MainWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Reaper Text Project Builder")
         self.resize(700, 420)
+        self._last_auto_output = "output/project_from_text.rpp"
 
         layout = QVBoxLayout(self)
 
         self.source_edit = QLineEdit()
         self.output_edit = QLineEdit("output/project_from_text.rpp")
         self.script_edit = QLineEdit()
+        self.source_edit.textChanged.connect(self._on_source_changed)
 
         layout.addLayout(self._path_row("Carpeta de audio", self.source_edit, True))
         layout.addLayout(self._path_row("Archivo .rpp salida", self.output_edit, False, save=True))
@@ -96,6 +98,19 @@ class MainWindow(QWidget):
         btn.clicked.connect(choose)
         row.addWidget(btn)
         return row
+
+    def _on_source_changed(self, source_text: str) -> None:
+        source = Path(source_text.strip())
+        if not source_text.strip():
+            return
+        if not source.exists() or not source.is_dir():
+            return
+
+        suggested = str((source / "project_from_text.rpp").resolve())
+        current_output = self.output_edit.text().strip()
+        if not current_output or current_output == self._last_auto_output or current_output == "output/project_from_text.rpp":
+            self.output_edit.setText(suggested)
+            self._last_auto_output = suggested
 
     def _generate(self) -> None:
         if not self.source_edit.text().strip() or not self.output_edit.text().strip():

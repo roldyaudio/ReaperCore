@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
+import math
+import uuid
+import wave
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-import math
-import uuid
 
 
 def new_guid() -> str:
@@ -249,10 +251,38 @@ class Project:
 
 
 def guessed_item_length(audio_file: Path) -> float:
-    """Fallback duration estimator from file size; avoids extra dependencies.
+    """Estimate duration in seconds, preferring exact decoders when available."""
+    if importlib.util.find_spec("soundfile"):
+        import soundfile as sf
 
-    If you prefer accurate timings, integrate `soundfile` or `pydub` and replace this method.
-    """
+        try:
+            info = sf.info(str(audio_file))
+            if info.samplerate > 0:
+                exact_seconds = info.frames / info.samplerate
+                return math.ceil(exact_seconds * 1000) / 1000
+        except Exception:
+            pass
+
+    if importlib.util.find_spec("pydub"):
+        from pydub import AudioSegment
+
+        try:
+            segment = AudioSegment.from_file(str(audio_file))
+            exact_seconds = len(segment) / 1000.0
+            return math.ceil(exact_seconds * 1000) / 1000
+        except Exception:
+            pass
+
+    if audio_file.suffix.lower() == ".wav":
+        try:
+            with wave.open(str(audio_file), "rb") as wav_file:
+                frame_rate = wav_file.getframerate()
+                if frame_rate > 0:
+                    exact_seconds = wav_file.getnframes() / frame_rate
+                    return math.ceil(exact_seconds * 1000) / 1000
+        except wave.Error:
+            pass
+
     size_bytes = audio_file.stat().st_size
     approx_seconds = max(0.25, min(30.0, size_bytes / (48000 * 2 * 2)))
     return math.ceil(approx_seconds * 1000) / 1000
