@@ -35,16 +35,40 @@ def _sorted_audio_files(folder: Path) -> list[Path]:
 def _folder_display_name(root: Path, folder: Path) -> str:
     if folder == root:
         return root.name
-    return str(folder.relative_to(root)).replace("/", " :: ")
+    return folder.name
+
+
+def _collect_track_tree(folder: Path, root: Path) -> tuple[Track, Path] | None:
+    track = Track(name=_folder_display_name(root, folder))
+    children: list[Track] = []
+
+    for child_folder in sorted([d for d in folder.iterdir() if d.is_dir()], key=lambda p: p.name.lower()):
+        collected = _collect_track_tree(child_folder, root)
+        if collected:
+            child_track, _ = collected
+            children.append(child_track)
+
+    has_audio = bool(_sorted_audio_files(folder))
+    if not has_audio and not children:
+        return None
+
+    track.children = children
+    return track, folder
 
 
 def _collect_tracks(root: Path) -> list[tuple[Track, Path]]:
     pairs: list[tuple[Track, Path]] = []
+    root_has_audio = bool(_sorted_audio_files(root))
 
-    for folder in sorted([d for d in root.rglob("*") if d.is_dir()] + [root], key=lambda p: str(p).lower()):
-        files = _sorted_audio_files(folder)
-        if files:
-            pairs.append((Track(name=_folder_display_name(root, folder)), folder))
+    if root_has_audio:
+        collected_root = _collect_track_tree(root, root)
+        if collected_root:
+            pairs.append(collected_root)
+    else:
+        for child_folder in sorted([d for d in root.iterdir() if d.is_dir()], key=lambda p: p.name.lower()):
+            collected = _collect_track_tree(child_folder, root)
+            if collected:
+                pairs.append(collected)
 
     if not pairs:
         raise ValueError(f"No audio files found under: {root}")
@@ -74,6 +98,9 @@ def _attach_items(
         cursor += length + cfg.spacing_seconds
         iid += 1
 
+    if not track.items:
+        return iid, cursor
+
     start = track.items[0].position
     end = track.items[-1].position + track.items[-1].length
     track.volume_envelope = VolumeEnvelope(start_time=start, end_time=end, min_db=cfg.min_db, max_db=cfg.max_db)
@@ -91,6 +118,21 @@ def _attach_items(
     return iid, cursor
 
 
+def _attach_track_tree_items(
+    track: Track,
+    folder: Path,
+    iid_start: int,
+    start_cursor: float,
+    cfg: GeneratorConfig,
+    order_map: dict[str, int] | None,
+) -> tuple[int, float]:
+    iid, cursor = _attach_items(track, folder, iid_start, start_cursor, cfg, order_map)
+    for child_track in track.children:
+        child_folder = folder / child_track.name
+        iid, cursor = _attach_track_tree_items(child_track, child_folder, iid, cursor, cfg, order_map)
+    return iid, cursor
+
+
 def generate_project(cfg: GeneratorConfig) -> Project:
     if not cfg.source_root.exists() or not cfg.source_root.is_dir():
         raise ValueError(f"Source root does not exist or is not a directory: {cfg.source_root}")
@@ -104,7 +146,7 @@ def generate_project(cfg: GeneratorConfig) -> Project:
     timeline_cursor = cfg.start_offset
     tracks: list[Track] = []
     for track, folder in pairs:
-        iid, timeline_cursor = _attach_items(track, folder, iid, timeline_cursor, cfg, order_map)
+        iid, timeline_cursor = _attach_track_tree_items(track, folder, iid, timeline_cursor, cfg, order_map)
         tracks.append(track)
 
     project = Project(tracks=tracks)
