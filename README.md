@@ -67,11 +67,35 @@ reaper-rpp /ruta/audios /ruta/salida/proyecto.rpp --no-eq --no-limiter
 
 ## Uso GUI
 
+Opción preferida (entry point único):
+
+```bash
+python main.py
+```
+
+Opciones alternativas:
+
 ```bash
 reaper-rpp-gui
 # o
 python -m reaper_text_project
 ```
+
+## Ejecutar con doble click (1 archivo)
+
+Si quieres abrirlo con **un solo archivo**:
+
+- Opción preferida: `main.py` (doble click si `.py` está asociado a Python).
+- En Windows también puedes usar `run_gui.bat` (doble click).
+- Como alternativa existe `run_gui.py`.
+
+Si da error en el primer intento, abre terminal en el repo y ejecuta:
+
+```bash
+pip install -e .
+```
+
+Luego vuelve a ejecutar `main.py`.
 
 En la GUI:
 1. Selecciona carpeta raíz de audio.
