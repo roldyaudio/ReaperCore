@@ -1,0 +1,19 @@
+[project]
+name = "reaper-text-project"
+version = "0.1.0"
+description = "Generador de sesiones REAPER .rpp desde estructura de carpetas"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "PySide6>=6.7",
+]
+
+[project.optional-dependencies]
+excel = ["openpyxl>=3.1"]
+
+[project.scripts]
+reaper-rpp = "reaper_text_project.cli:main"
+reaper-rpp-gui = "reaper_text_project.gui:run_gui"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
