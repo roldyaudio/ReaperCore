@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+*.rpp-bak
+*.RPP-bak
+output/
+.idea/
+.vscode/
+.DS_Store
+*.log
