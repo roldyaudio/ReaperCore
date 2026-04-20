@@ -22,8 +22,10 @@ from .generator import GeneratorConfig, generate_project
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        self._collapsed_size = (700, 200)
+        self._expanded_size = (700, 420)
         self.setWindowTitle("ReaperCore")
-        self.resize(700, 420)
+        self.resize(*self._collapsed_size)
         self._last_auto_output = "output/project_from_text.rpp"
 
         layout = QVBoxLayout(self)
@@ -104,6 +106,7 @@ class MainWindow(QWidget):
     def _toggle_fx_group(self, enabled: bool) -> None:
         self.fx_group.setVisible(enabled)
         self.fx_group.setEnabled(enabled)
+        self.resize(*(self._expanded_size if enabled else self._collapsed_size))
 
     def _on_source_changed(self, source_text: str) -> None:
         source = Path(source_text.strip())
