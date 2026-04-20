@@ -25,8 +25,8 @@ def test_generate_project_from_nested_dirs(tmp_path: Path) -> None:
     assert "Pro-Q 3" in content
     assert project.tracks[0].name == "B1"
     assert project.tracks[0].children[0].name == "Character_Select"
-    assert "I_FOLDERDEPTH 1" in content
-    assert "I_FOLDERDEPTH -1" in content
+    assert "ISBUS 1 1" in content
+    assert "ISBUS 2 -1" in content
 
 
 def test_guessed_item_length_reads_exact_wav_duration(tmp_path: Path) -> None:

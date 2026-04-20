@@ -171,6 +171,13 @@ class Track:
     guid: str = field(default_factory=new_guid)
 
     def to_node(self, folder_depth: int = 0) -> RPPNode:
+        if folder_depth > 0:
+            isbus_line = f"ISBUS 1 {folder_depth}"
+        elif folder_depth < 0:
+            isbus_line = f"ISBUS 2 {folder_depth}"
+        else:
+            isbus_line = "ISBUS 0 0"
+
         node = RPPNode("TRACK", [self.guid])
         node.lines.extend(
             [
@@ -183,7 +190,7 @@ class Track:
                 "MUTESOLO 0 0 0",
                 "IPHASE 0",
                 "PLAYOFFS 0 1",
-                "ISBUS 0 0",
+                isbus_line,
                 "BUSCOMP 0 0 0 0 0",
                 "SHOWINMIX 1 0.6667 0.5 1 0.5 0 0 0 0",
                 "FIXEDLANES 9 0 0 0 0",
@@ -200,8 +207,6 @@ class Track:
                 "MAINSEND 1 0",
             ]
         )
-        if folder_depth != 0:
-            node.lines.append(f"I_FOLDERDEPTH {folder_depth}")
         if self.volume_envelope:
             node.children.append(self.volume_envelope.to_node())
         if self.use_fx_chain and self.fx_chain:
