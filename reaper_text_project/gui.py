@@ -4,8 +4,11 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
+    QDialog,
+    QDialogButtonBox,
     QVBoxLayout,
     QHBoxLayout,
+    QGridLayout,
     QLabel,
     QPushButton,
     QFileDialog,
@@ -23,7 +26,7 @@ class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("ReaperCore")
-        self.resize(700, 420)
+        self.resize(700, 200)
         self._last_auto_output = "output/project_from_text.rpp"
 
         layout = QVBoxLayout(self)
@@ -63,15 +66,11 @@ class MainWindow(QWidget):
             cb.setChecked(True)
 
         layout.addWidget(self.fx_all)
-        self.fx_group = QGroupBox("Procesos")
-        fx_row = QHBoxLayout()
-        for cb in [self.fx_ds, self.fx_comp, self.fx_eq, self.fx_mb, self.fx_lim]:
-            fx_row.addWidget(cb)
-        self.fx_group.setLayout(fx_row)
-        layout.addWidget(self.fx_group)
-        self.fx_group.setVisible(False)
-        self.fx_group.setEnabled(False)
-        self.fx_all.toggled.connect(self._toggle_fx_group)
+        self.fx_process_btn = QPushButton("Seleccionar procesos…")
+        self.fx_process_btn.setEnabled(False)
+        self.fx_process_btn.clicked.connect(self._open_fx_dialog)
+        self.fx_all.toggled.connect(self._toggle_fx_controls)
+        layout.addWidget(self.fx_process_btn)
 
         self.btn_generate = QPushButton("Generar .RPP")
         self.btn_generate.clicked.connect(self._generate)
@@ -101,9 +100,43 @@ class MainWindow(QWidget):
         row.addWidget(btn)
         return row
 
-    def _toggle_fx_group(self, enabled: bool) -> None:
-        self.fx_group.setVisible(enabled)
-        self.fx_group.setEnabled(enabled)
+    def _toggle_fx_controls(self, enabled: bool) -> None:
+        self.fx_process_btn.setEnabled(enabled)
+
+    def _open_fx_dialog(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Seleccionar procesos")
+        dialog_layout = QVBoxLayout(dialog)
+
+        box = QGroupBox("Procesos FabFilter")
+        grid = QGridLayout()
+        process_options = [
+            ("Pro-DS", self.fx_ds.isChecked()),
+            ("Pro-C2", self.fx_comp.isChecked()),
+            ("Pro-Q3", self.fx_eq.isChecked()),
+            ("Pro-MB", self.fx_mb.isChecked()),
+            ("Pro-L2", self.fx_lim.isChecked()),
+        ]
+        dialog_checkboxes: list[QCheckBox] = []
+        for idx, (label, checked) in enumerate(process_options):
+            checkbox = QCheckBox(label)
+            checkbox.setChecked(checked)
+            dialog_checkboxes.append(checkbox)
+            grid.addWidget(checkbox, idx // 2, idx % 2)
+        box.setLayout(grid)
+        dialog_layout.addWidget(box)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        dialog_layout.addWidget(button_box)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.fx_ds.setChecked(dialog_checkboxes[0].isChecked())
+            self.fx_comp.setChecked(dialog_checkboxes[1].isChecked())
+            self.fx_eq.setChecked(dialog_checkboxes[2].isChecked())
+            self.fx_mb.setChecked(dialog_checkboxes[3].isChecked())
+            self.fx_lim.setChecked(dialog_checkboxes[4].isChecked())
 
     def _on_source_changed(self, source_text: str) -> None:
         source = Path(source_text.strip())
