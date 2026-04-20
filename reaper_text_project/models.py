@@ -238,12 +238,27 @@ class Project:
 
     def render(self) -> str:
         out = [line + "\n" for line in self._header_lines()]
-        for track in self.tracks:
-            out.append(track.to_node(folder_depth=0).render(indent=1))
+        for track, folder_depth in self._iter_tracks_with_folder_depth():
+            out.append(track.to_node(folder_depth=folder_depth).render(indent=1))
         out.append("  <EXTENSIONS\n")
         out.append("  >\n")
         out.append(">\n")
         return "".join(out)
+
+    def _iter_tracks_with_folder_depth(self) -> list[tuple[Track, int]]:
+        def flatten(track: Track) -> list[tuple[Track, int]]:
+            entries: list[tuple[Track, int]] = [(track, 1 if track.children else 0)]
+            for child in track.children:
+                entries.extend(flatten(child))
+            if track.children:
+                last_track, last_depth = entries[-1]
+                entries[-1] = (last_track, last_depth - 1)
+            return entries
+
+        flattened: list[tuple[Track, int]] = []
+        for root_track in self.tracks:
+            flattened.extend(flatten(root_track))
+        return flattened
 
     def save(self, output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
