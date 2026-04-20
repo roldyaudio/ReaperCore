@@ -24,7 +24,7 @@ class GeneratorConfig:
     include_script_order: bool = False
     script_path: Path | None = None
     start_offset: float = 0.0
-    spacing_seconds: float = 2.0
+    spacing_seconds: float = 3.0
 
 
 def _sorted_audio_files(folder: Path) -> list[Path]:
@@ -52,13 +52,20 @@ def _collect_tracks(root: Path) -> list[tuple[Track, Path]]:
     return pairs
 
 
-def _attach_items(track: Track, folder: Path, iid_start: int, cfg: GeneratorConfig, order_map: dict[str, int] | None) -> int:
+def _attach_items(
+    track: Track,
+    folder: Path,
+    iid_start: int,
+    start_cursor: float,
+    cfg: GeneratorConfig,
+    order_map: dict[str, int] | None,
+) -> tuple[int, float]:
     files = _sorted_audio_files(folder)
     if order_map:
         fallback = {f.name.lower(): i for i, f in enumerate(files)}
         files.sort(key=lambda p: order_map.get(p.name.lower(), 10_000 + fallback[p.name.lower()]))
 
-    cursor = cfg.start_offset
+    cursor = start_cursor
     iid = iid_start
     for f in files:
         length = guessed_item_length(f)
@@ -81,7 +88,7 @@ def _attach_items(track: Track, folder: Path, iid_start: int, cfg: GeneratorConf
             include_limiter=cfg.include_limiter,
         )
 
-    return iid
+    return iid, cursor
 
 
 def generate_project(cfg: GeneratorConfig) -> Project:
@@ -94,9 +101,10 @@ def generate_project(cfg: GeneratorConfig) -> Project:
 
     pairs = _collect_tracks(cfg.source_root)
     iid = 1
+    timeline_cursor = cfg.start_offset
     tracks: list[Track] = []
     for track, folder in pairs:
-        iid = _attach_items(track, folder, iid, cfg, order_map)
+        iid, timeline_cursor = _attach_items(track, folder, iid, timeline_cursor, cfg, order_map)
         tracks.append(track)
 
     project = Project(tracks=tracks)

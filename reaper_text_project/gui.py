@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QCheckBox,
     QMessageBox,
+    QGroupBox,
 )
 
 from .generator import GeneratorConfig, generate_project
@@ -21,7 +22,7 @@ from .generator import GeneratorConfig, generate_project
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Reaper Text Project Builder")
+        self.setWindowTitle("ReaperCore")
         self.resize(700, 420)
         self._last_auto_output = "output/project_from_text.rpp"
 
@@ -34,29 +35,25 @@ class MainWindow(QWidget):
 
         layout.addLayout(self._path_row("Carpeta de audio", self.source_edit, True))
         layout.addLayout(self._path_row("Archivo .rpp salida", self.output_edit, False, save=True))
-        layout.addLayout(self._path_row("Script order (CSV/XLSX/TXT)", self.script_edit, False))
+        layout.addLayout(self._path_row("Script Order", self.script_edit, False))
 
-        self.min_db = QDoubleSpinBox()
-        self.min_db.setRange(-60.0, 12.0)
-        self.min_db.setValue(-3.0)
-        self.max_db = QDoubleSpinBox()
-        self.max_db.setRange(-60.0, 12.0)
-        self.max_db.setValue(3.0)
+        self.db_range = QDoubleSpinBox()
+        self.db_range.setRange(0.0, 24.0)
+        self.db_range.setValue(6.0)
+        self.db_range.setSingleStep(0.5)
         self.spacing = QDoubleSpinBox()
         self.spacing.setRange(0.0, 30.0)
-        self.spacing.setValue(2.0)
+        self.spacing.setValue(3.0)
 
         db_row = QHBoxLayout()
-        db_row.addWidget(QLabel("Pre-FX min dB"))
-        db_row.addWidget(self.min_db)
-        db_row.addWidget(QLabel("Pre-FX max dB"))
-        db_row.addWidget(self.max_db)
+        db_row.addWidget(QLabel("Rango dB total"))
+        db_row.addWidget(self.db_range)
         db_row.addWidget(QLabel("Silencio (s)"))
         db_row.addWidget(self.spacing)
         layout.addLayout(db_row)
 
         self.fx_all = QCheckBox("Incluir cadena FabFilter")
-        self.fx_all.setChecked(True)
+        self.fx_all.setChecked(False)
         self.fx_ds = QCheckBox("Pro-DS")
         self.fx_comp = QCheckBox("Pro-C2")
         self.fx_eq = QCheckBox("Pro-Q3")
@@ -65,11 +62,16 @@ class MainWindow(QWidget):
         for cb in [self.fx_ds, self.fx_comp, self.fx_eq, self.fx_mb, self.fx_lim]:
             cb.setChecked(True)
 
+        layout.addWidget(self.fx_all)
+        self.fx_group = QGroupBox("Procesos")
         fx_row = QHBoxLayout()
-        fx_row.addWidget(self.fx_all)
         for cb in [self.fx_ds, self.fx_comp, self.fx_eq, self.fx_mb, self.fx_lim]:
             fx_row.addWidget(cb)
-        layout.addLayout(fx_row)
+        self.fx_group.setLayout(fx_row)
+        layout.addWidget(self.fx_group)
+        self.fx_group.setVisible(False)
+        self.fx_group.setEnabled(False)
+        self.fx_all.toggled.connect(self._toggle_fx_group)
 
         self.btn_generate = QPushButton("Generar .RPP")
         self.btn_generate.clicked.connect(self._generate)
@@ -91,13 +93,17 @@ class MainWindow(QWidget):
                 if d:
                     edit.setText(d)
             else:
-                f, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo", "", "Data (*.csv *.xlsx *.xls *.txt)")
+                f, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo")
                 if f:
                     edit.setText(f)
 
         btn.clicked.connect(choose)
         row.addWidget(btn)
         return row
+
+    def _toggle_fx_group(self, enabled: bool) -> None:
+        self.fx_group.setVisible(enabled)
+        self.fx_group.setEnabled(enabled)
 
     def _on_source_changed(self, source_text: str) -> None:
         source = Path(source_text.strip())
@@ -117,11 +123,12 @@ class MainWindow(QWidget):
             QMessageBox.warning(self, "Faltan datos", "Indica al menos la carpeta de audio y ruta de salida")
             return
 
+        half_range = self.db_range.value() / 2.0
         cfg = GeneratorConfig(
             source_root=Path(self.source_edit.text().strip()),
             output_file=Path(self.output_edit.text().strip()),
-            min_db=self.min_db.value(),
-            max_db=self.max_db.value(),
+            min_db=-half_range,
+            max_db=half_range,
             spacing_seconds=self.spacing.value(),
             use_fx_chain=self.fx_all.isChecked(),
             include_ds=self.fx_ds.isChecked(),
