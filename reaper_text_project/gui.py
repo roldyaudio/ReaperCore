@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -26,81 +27,107 @@ from .generator import GeneratorConfig, generate_project
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self._collapsed_size = (700, 200)
-        self._expanded_size = (700, 420)
+        #self._collapsed_size = (700, 200)
+        #self._expanded_size = (700, 420)
         self.setWindowTitle("ReaperCore")
-        self.resize(700, 200)
+        #self.resize(600, 300)
+        self.setFixedWidth(600)
+        self.setFixedHeight(380)
         self._last_auto_output = "output/project_from_text.rpp"
 
         main_layout = QVBoxLayout(self)
 
         # -------------------- PATHS --------------------
-        paths_box = QGroupBox("Paths")
+        paths_box = QGroupBox("   Paths   ")
         paths_layout = QVBoxLayout()
 
         self.source_edit = QLineEdit()
-        self.output_edit = QLineEdit("output/project_from_text.rpp")
+        self.source_edit.setPlaceholderText("Enter path with audio files here")
+        self.output_edit = QLineEdit()
+        self.output_edit.setPlaceholderText("Enter output path or leave empty to use same as above")
+        self.source_edit.setPlaceholderText("Enter path with audio files here")
         self.script_edit = QLineEdit()
+        self.script_edit.setPlaceholderText("Enter recording script order (.xlsx, .csv, .txt). Leave empty if not")
 
         self.source_edit.textChanged.connect(self._on_source_changed)
 
-        paths_layout.addLayout(self._path_row("Audio Folder", self.source_edit, True))
-        paths_layout.addLayout(self._path_row("Output .rpp File", self.output_edit, False, save=True))
-        paths_layout.addLayout(self._path_row("Script Order File", self.script_edit, False))
+        paths_layout.addLayout(self._path_row("Audio folder", self.source_edit, True))
+        paths_layout.addLayout(self._path_row("Output session", self.output_edit, False, save=True))
+        paths_layout.addLayout(self._path_row("Recording script", self.script_edit, False))
 
         paths_box.setLayout(paths_layout)
         main_layout.addWidget(paths_box)
 
-        # -------------------- SETUP --------------------
-        setup_box = QGroupBox("Setup")
+        # -------------------- SETUP (CENTRADO) --------------------
+        setup_box = QGroupBox("   Setup   ")
+        setup_box.setMinimumWidth(300)
+        #setup_box.setMaximumWidth(200)
+
         setup_layout = QVBoxLayout()
 
+        center_row = QHBoxLayout()
+        center_row.addStretch()
+        center_row.addWidget(setup_box)
+        center_row.addStretch()
+        main_layout.addLayout(center_row)
+
+        # -------- Controls --------
         self.sample_rate_combo = QComboBox()
+        #self.sample_rate_combo.setMaximumWidth(120)
         self.sample_rate_combo.addItems(["44.1 kHz", "48 kHz", "96 kHz"])
         self.sample_rate_combo.setCurrentText("48 kHz")
 
-        self.pre_fx_env_enabled = QCheckBox("Enable Pre FX Volume Envelope")
+        self.spacing = QDoubleSpinBox()
+        #self.spacing.setMaximumWidth(120)
+        self.spacing.setRange(0.0, 30.0)
+        self.spacing.setValue(3.0)
+        #self.spacing.setMinimumWidth(100)
+
+        self.pre_fx_env_enabled = QCheckBox("Enable Pre FX Volume\nenvelope Range")
         self.pre_fx_env_enabled.setChecked(False)
 
         self.db_range = QDoubleSpinBox()
+        #self.db_range.setMaximumWidth(120)
         self.db_range.setRange(0.0, 24.0)
         self.db_range.setValue(0.0)
         self.db_range.setSingleStep(0.5)
         self.db_range.setEnabled(False)
+        #self.db_range.setMinimumWidth(100)
+
+        range_label = QLabel("")
+        range_label.setEnabled(False)
 
         self.pre_fx_env_enabled.toggled.connect(self.db_range.setEnabled)
+        self.pre_fx_env_enabled.toggled.connect(range_label.setEnabled)
 
-        self.spacing = QDoubleSpinBox()
-        self.spacing.setRange(0.0, 30.0)
-        self.spacing.setValue(3.0)
-        self.spacing.setMinimumWidth(100)
-
-        self.db_range.setMinimumWidth(100)
-
-        # GRID (aquí está la mejora clave)
+        # -------- Grid --------
         grid = QGridLayout()
+        grid.setAlignment(Qt.AlignTop)
         grid.setHorizontalSpacing(16)
         grid.setVerticalSpacing(10)
 
-        grid.addWidget(QLabel("Project Sample Rate"), 0, 0)
+        grid.addWidget(QLabel("Sample Rate"), 0, 0)
         grid.addWidget(self.sample_rate_combo, 0, 1)
 
-        grid.addWidget(QLabel("Item separation (s)"), 1, 0)
+        grid.addWidget(QLabel("Item separation"), 1, 0)
         grid.addWidget(self.spacing, 1, 1)
 
-        grid.addWidget(QLabel("Enable Pre FX Volume Envelope"), 2, 0)
-        grid.addWidget(self.pre_fx_env_enabled, 2, 1)
+        grid.addWidget(self.pre_fx_env_enabled, 2, 0)
 
-        grid.addWidget(QLabel("Range (dB)"), 3, 0)
-        grid.addWidget(self.db_range, 3, 1)
+        range_row = QHBoxLayout()
+        #range_row.addWidget(range_label)
+        range_row.addWidget(self.db_range)
+        range_row.addStretch()
 
-        grid.setColumnStretch(0, 0)
-        grid.setColumnStretch(1, 1)
+        grid.addLayout(range_row, 2, 1)
+
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 0)
 
         setup_layout.addLayout(grid)
 
         # -------------------- FX --------------------
-        self.fx_all = QCheckBox("Include FabFilter Chain")
+        self.fx_all = QCheckBox("Include Dynamics")
         self.fx_all.setChecked(False)
 
         self.fx_ds = QCheckBox("Pro-DS")
@@ -112,9 +139,9 @@ class MainWindow(QWidget):
         for cb in [self.fx_ds, self.fx_comp, self.fx_eq, self.fx_mb, self.fx_lim]:
             cb.setChecked(True)
 
-        self.fx_process_btn = QPushButton("Select Processes…")
+        self.fx_process_btn = QPushButton("Select...")
         self.fx_process_btn.setEnabled(False)
-        self.fx_process_btn.setFixedWidth(170)
+        self.fx_process_btn.setFixedWidth(93)
         self.fx_process_btn.clicked.connect(self._open_fx_dialog)
 
         self.fx_all.toggled.connect(self._toggle_fx_controls)
@@ -128,11 +155,10 @@ class MainWindow(QWidget):
         setup_layout.addLayout(fx_row)
 
         setup_box.setLayout(setup_layout)
-        main_layout.addWidget(setup_box)
 
         # -------------------- GENERATE --------------------
-        self.btn_generate = QPushButton("Generate .RPP")
-        self.btn_generate.setFixedWidth(170)
+        self.btn_generate = QPushButton("Generate session")
+        self.btn_generate.setFixedWidth(140)
         self.btn_generate.clicked.connect(self._generate)
 
         generate_row = QHBoxLayout()
@@ -146,7 +172,7 @@ class MainWindow(QWidget):
         row = QHBoxLayout()
         row.addWidget(QLabel(title))
         row.addWidget(edit)
-        btn = QPushButton("...")
+        btn = QPushButton("Browse")
 
         def choose() -> None:
             if save:
@@ -154,7 +180,7 @@ class MainWindow(QWidget):
                 if f:
                     edit.setText(f)
             elif is_dir:
-                d = QFileDialog.getExistingDirectory(self, "Select Folder")
+                d = QFileDialog.getExistingDirectory(self, "Select directory with audio files")
                 if d:
                     edit.setText(d)
             else:
@@ -174,7 +200,7 @@ class MainWindow(QWidget):
         dialog.setWindowTitle("Select Processes")
         dialog_layout = QVBoxLayout(dialog)
 
-        box = QGroupBox("FabFilter Processes")
+        box = QGroupBox("  FabFilter  ")
         grid = QGridLayout()
         process_options = [
             ("Pro-DS", self.fx_ds.isChecked()),
