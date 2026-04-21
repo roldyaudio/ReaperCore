@@ -32,17 +32,23 @@ class MainWindow(QWidget):
         self.resize(700, 200)
         self._last_auto_output = "output/project_from_text.rpp"
 
-        layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
+        paths_box = QGroupBox("Paths")
+        paths_layout = QVBoxLayout()
         self.source_edit = QLineEdit()
         self.output_edit = QLineEdit("output/project_from_text.rpp")
         self.script_edit = QLineEdit()
         self.source_edit.textChanged.connect(self._on_source_changed)
 
-        layout.addLayout(self._path_row("Audio Folder", self.source_edit, True))
-        layout.addLayout(self._path_row("Output .rpp File", self.output_edit, False, save=True))
-        layout.addLayout(self._path_row("Script Order File", self.script_edit, False))
+        paths_layout.addLayout(self._path_row("Audio Folder", self.source_edit, True))
+        paths_layout.addLayout(self._path_row("Output .rpp File", self.output_edit, False, save=True))
+        paths_layout.addLayout(self._path_row("Script Order File", self.script_edit, False))
+        paths_box.setLayout(paths_layout)
+        main_layout.addWidget(paths_box)
 
+        setup_box = QGroupBox("Setup")
+        setup_layout = QVBoxLayout()
         self.sample_rate_combo = QComboBox()
         self.sample_rate_combo.addItems(["44.1 kHz", "48 kHz", "96 kHz"])
         self.sample_rate_combo.setCurrentText("48 kHz")
@@ -66,12 +72,12 @@ class MainWindow(QWidget):
         config_row.addWidget(self.pre_fx_env_enabled)
         config_row.addWidget(QLabel("Pre FX Volume Envelope Range (dB)"))
         config_row.addWidget(self.db_range)
-        layout.addLayout(config_row)
+        setup_layout.addLayout(config_row)
 
         db_row = QHBoxLayout()
         db_row.addWidget(QLabel("Item separation (s)"))
         db_row.addWidget(self.spacing)
-        layout.addLayout(db_row)
+        setup_layout.addLayout(db_row)
 
         self.fx_all = QCheckBox("Include FabFilter Chain")
         self.fx_all.setChecked(False)
@@ -83,7 +89,7 @@ class MainWindow(QWidget):
         for cb in [self.fx_ds, self.fx_comp, self.fx_eq, self.fx_mb, self.fx_lim]:
             cb.setChecked(True)
 
-        layout.addWidget(self.fx_all)
+        setup_layout.addWidget(self.fx_all)
         self.fx_process_btn = QPushButton("Select Processes…")
         self.fx_process_btn.setEnabled(False)
         self.fx_process_btn.clicked.connect(self._open_fx_dialog)
@@ -93,7 +99,10 @@ class MainWindow(QWidget):
         self.fx_process_btn.setFixedWidth(170)
         fx_button_row.addWidget(self.fx_process_btn)
         fx_button_row.addStretch()
-        layout.addLayout(fx_button_row)
+        setup_layout.addLayout(fx_button_row)
+
+        setup_box.setLayout(setup_layout)
+        main_layout.addWidget(setup_box)
 
         self.btn_generate = QPushButton("Generate .RPP")
         self.btn_generate.setFixedWidth(170)
@@ -102,7 +111,7 @@ class MainWindow(QWidget):
         generate_row.addStretch()
         generate_row.addWidget(self.btn_generate)
         generate_row.addStretch()
-        layout.addLayout(generate_row)
+        main_layout.addLayout(generate_row)
 
     def _path_row(self, title: str, edit: QLineEdit, is_dir: bool, save: bool = False) -> QHBoxLayout:
         row = QHBoxLayout()
