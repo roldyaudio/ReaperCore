@@ -25,6 +25,9 @@ class GeneratorConfig:
     script_path: Path | None = None
     start_offset: float = 0.0
     spacing_seconds: float = 3.0
+    sample_rate: int = 48_000
+    enable_pre_fx_volume_envelope: bool = False
+    pre_fx_volume_envelope_range_db: float = 0.0
 
 
 def _sorted_audio_files(folder: Path) -> list[Path]:
@@ -101,9 +104,11 @@ def _attach_items(
     if not track.items:
         return iid, cursor
 
-    start = track.items[0].position
-    end = track.items[-1].position + track.items[-1].length
-    track.volume_envelope = VolumeEnvelope(start_time=start, end_time=end, min_db=cfg.min_db, max_db=cfg.max_db)
+    if cfg.enable_pre_fx_volume_envelope:
+        half_range = cfg.pre_fx_volume_envelope_range_db / 2.0
+        start = track.items[0].position
+        end = track.items[-1].position + track.items[-1].length
+        track.volume_envelope = VolumeEnvelope(start_time=start, end_time=end, min_db=-half_range, max_db=half_range)
 
     if cfg.use_fx_chain:
         track.use_fx_chain = True
@@ -149,6 +154,6 @@ def generate_project(cfg: GeneratorConfig) -> Project:
         iid, timeline_cursor = _attach_track_tree_items(track, folder, iid, timeline_cursor, cfg, order_map)
         tracks.append(track)
 
-    project = Project(tracks=tracks)
+    project = Project(tracks=tracks, sample_rate=cfg.sample_rate)
     project.save(cfg.output_file)
     return project

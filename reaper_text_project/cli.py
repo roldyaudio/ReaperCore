@@ -20,6 +20,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-multiband", action="store_true")
     p.add_argument("--no-limiter", action="store_true")
     p.add_argument("--script", type=Path, help="CSV/XLSX/TXT with desired item order")
+    p.add_argument("--sample-rate", type=int, choices=[44100, 48000, 96000], default=48000)
+    p.add_argument("--enable-pre-fx-envelope", action="store_true", help="Enable track pre-FX volume envelope")
+    p.add_argument("--pre-fx-range-db", type=float, default=0.0, help="Total dB range for pre-FX envelope")
     return p
 
 
@@ -31,6 +34,9 @@ def main() -> None:
         min_db=args.min_db,
         max_db=args.max_db,
         spacing_seconds=args.spacing,
+        sample_rate=args.sample_rate,
+        enable_pre_fx_volume_envelope=args.enable_pre_fx_envelope,
+        pre_fx_volume_envelope_range_db=max(0.0, args.pre_fx_range_db),
         use_fx_chain=not args.no_fx,
         include_ds=not args.no_ds,
         include_comp=not args.no_comp,

@@ -221,6 +221,7 @@ class Project:
     tracks: list[Track]
     name: str = "Generated from text"
     reaper_version: str = '"7.69/win64"'
+    sample_rate: int = 48_000
 
     def _header_lines(self) -> list[str]:
         ts = int(datetime.now(tz=timezone.utc).timestamp())
@@ -235,6 +236,7 @@ class Project:
             "  GLOBAL_AUTO -1",
             "  TEMPO 120 4 4 0",
             "  PLAYRATE 1 0 0.25 4",
+            f"  PROJECT_SRATE {self.sample_rate} 0 0",
             "  MASTER_NCH 2 2",
             "  MASTER_VOLUME 1 0 -1 -1 1",
             "  MASTER_PANMODE 3",
