@@ -21,7 +21,8 @@ def test_generate_project_from_nested_dirs(tmp_path: Path) -> None:
     content = out.read_text(encoding="utf-8")
     assert "<TRACK" in content
     assert "<ITEM" in content
-    assert "<VOLENV" in content
+    assert "<VOLENV" not in content
+    assert "PROJECT_SRATE 48000 0 0" in content
     assert "Pro-Q 3" in content
     assert project.tracks[0].name == "B1"
     assert project.tracks[0].children[0].name == "Character_Select"
@@ -68,3 +69,24 @@ def test_items_continue_from_previous_track_end(tmp_path: Path) -> None:
     assert len(project.tracks) == 2
     assert project.tracks[0].items[0].position == 0.0
     assert project.tracks[1].items[0].position == 4.0
+
+
+def test_pre_fx_volume_envelope_can_be_enabled(tmp_path: Path) -> None:
+    root = tmp_path / "ES"
+    folder = root / "A"
+    folder.mkdir(parents=True)
+    (folder / "a.wav").write_bytes(b"0" * 48000)
+
+    out = tmp_path / "out.rpp"
+    cfg = GeneratorConfig(
+        source_root=root,
+        output_file=out,
+        enable_pre_fx_volume_envelope=True,
+        pre_fx_volume_envelope_range_db=6.0,
+        sample_rate=96_000,
+    )
+    generate_project(cfg)
+
+    content = out.read_text(encoding="utf-8")
+    assert "<VOLENV" in content
+    assert "PROJECT_SRATE 96000 0 0" in content
