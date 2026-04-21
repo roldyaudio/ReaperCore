@@ -16,7 +16,8 @@ Este proyecto replica esos bloques estructurales para construir sesiones automá
 - Escanea una carpeta raíz con audio (incluye subcarpetas).
 - Convierte la estructura de carpetas en tracks jerárquicos (canales/subcanales).
 - Crea items con `SOURCE WAVE` y `FILE` apuntando a cada audio.
-- Crea automatización **Pre-FX volume** (envolvente de track) desde `min dB` a `max dB` entre primer y último item del track.
+- Permite activar/desactivar automatización **Pre-FX volume envelope** por track (apagada por defecto) y definir su rango total en dB.
+- Permite elegir sample rate del proyecto desde GUI/CLI (`44.1 kHz`, `48 kHz`, `96 kHz`).
 - Inserta cadena de FX FabFilter configurable:
   - Pro-DS
   - Pro-C 2
@@ -101,9 +102,11 @@ En la GUI:
 1. Selecciona carpeta raíz de audio.
 2. Selecciona ruta de salida `.rpp`.
 3. (Opcional) archivo de script para orden.
-4. Ajusta rango dB de automatización y spacing.
-5. Activa/desactiva cadena FX y procesos.
-6. Genera.
+4. Elige `Project Sample Rate`.
+5. (Opcional) activa `Enable Pre FX Volume Envelope` y ajusta `Pre FX Volume Envelope Range (dB)`.
+6. Ajusta `Item separation (s)`.
+7. Activa/desactiva cadena FX y procesos.
+8. Genera.
 
 ## Notas importantes
 
