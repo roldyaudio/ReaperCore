@@ -236,7 +236,7 @@ class Project:
             "  GLOBAL_AUTO -1",
             "  TEMPO 120 4 4 0",
             "  PLAYRATE 1 0 0.25 4",
-            f"  PROJECT_SRATE {self.sample_rate} 0 0",
+            f"  SAMPLERATE {self.sample_rate} 1 0",
             "  MASTER_NCH 2 2",
             "  MASTER_VOLUME 1 0 -1 -1 1",
             "  MASTER_PANMODE 3",

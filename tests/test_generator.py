@@ -22,7 +22,7 @@ def test_generate_project_from_nested_dirs(tmp_path: Path) -> None:
     assert "<TRACK" in content
     assert "<ITEM" in content
     assert "<VOLENV" not in content
-    assert "PROJECT_SRATE 48000 0 0" in content
+    assert "SAMPLERATE 48000 1 0" in content
     assert "Pro-Q 3" in content
     assert project.tracks[0].name == "B1"
     assert project.tracks[0].children[0].name == "Character_Select"
@@ -89,4 +89,4 @@ def test_pre_fx_volume_envelope_can_be_enabled(tmp_path: Path) -> None:
 
     content = out.read_text(encoding="utf-8")
     assert "<VOLENV" in content
-    assert "PROJECT_SRATE 96000 0 0" in content
+    assert "SAMPLERATE 96000 1 0" in content
